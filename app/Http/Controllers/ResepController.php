@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreResepRequest;
 use App\Http\Requests\UpdateResepRequest;
 use App\Models\Resep;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class ResepController extends Controller
@@ -16,41 +15,37 @@ class ResepController extends Controller
     public function index()
     {
         $user = auth('sanctum')->user();
-        $resep = $user
-            ? Resep::where('id_user', null)->orWhere('id_user', $user->id_user)->get()
-            : Resep::where("id_user", null)->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data resep berhasil diperoleh',
-            'data' => $resep->map(function ($resep) use ($user) {
-                return [
-                    'id_resep' => $resep->id_resep,
-                    'judul' => $resep->judul,
-                    'kategori' => $resep->kategori,
-                    'deskripsi' => $resep->deskripsi,
-                    'mine' => $user && $resep->id_user === $user->id_user ? "1" : "0"
-                ];
-            })
-        ]);
+        $reseps = $user
+            ? Resep::whereNull('id_user')->orWhere('id_user', $user->id_user)->get()
+            : Resep::whereNull('id_user')->get();
+
+        return $reseps->map(function ($resep) use ($user) {
+            return [
+                'id_resep' => $resep->id_resep,
+                'judul' => $resep->judul,
+                'kategori' => $resep->kategori,
+                'deskripsi' => $resep->deskripsi,
+                'mine' => $user && $resep->id_user === $user->id_user ? "1" : "0"
+            ];
+        });
     }
 
+    /**
+     * Get image file from resep.
+     */
     public function getImage($id_resep)
     {
         $resep = Resep::find($id_resep);
 
-        if ($resep) {
-            $path = public_path($resep->imageUrl);
-            return response()->file($path);
+        if ($resep && file_exists(public_path($resep->imageUrl))) {
+            return response()->file(public_path($resep->imageUrl));
         }
-    }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        return response()->json([
+            'success' => false,
+            'message' => 'Gambar tidak ditemukan',
+        ]);
     }
 
     /**
@@ -69,7 +64,7 @@ class ResepController extends Controller
         $filename = 'image_' . time() . '.' . $image->getClientOriginalExtension();
         $image->move(public_path('upload'), $filename);
 
-        Resep::create([
+        $resep = Resep::create([
             "judul" => $request->judul,
             "kategori" => $request->kategori,
             "deskripsi" => $request->deskripsi,
@@ -77,26 +72,7 @@ class ResepController extends Controller
             "id_user" => $request->user()->id_user
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Resep baru berhasil ditambahkan'
-        ]);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Resep $resep)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Resep $resep)
-    {
-        //
+        return $resep;
     }
 
     /**
@@ -139,10 +115,7 @@ class ResepController extends Controller
         $resep->deskripsi = $request->deskripsi;
         $resep->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Informasi resep berhasil diperbarui',
-        ]);
+        return $resep;
     }
 
     /**
