@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreResepRequest;
 use App\Http\Requests\UpdateResepRequest;
 use App\Models\Resep;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ResepController extends Controller
