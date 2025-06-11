@@ -59,8 +59,8 @@ class ResepController extends Controller
     {
         $request->validate([
             "judul" => ["required", "string", "max:255"],
-            "penulis" => ["required", "string", "max:255"],
-            "penerbit" => ["required", "string", "max:255"],
+            "kategori" => ["required", "string"],
+            "deskripsi" => ["required", "string"],
             "image" => ["required", "image"],
         ]);
 
@@ -70,8 +70,8 @@ class ResepController extends Controller
 
         Resep::create([
             "judul" => $request->judul,
-            "penulis" => $request->penulis,
-            "penerbit" => $request->penerbit,
+            "kategori" => $request->kategori,
+            "deskripsi" => $request->deskripsi,
             "imageUrl" => "upload/$filename",
             "id_user" => $request->user()->id_user
         ]);
@@ -105,8 +105,6 @@ class ResepController extends Controller
     {
         $request->validate([
             "judul" => ["required", "string", "max:255"],
-            "penulis" => ["required", "string", "max:255"],
-            "penerbit" => ["required", "string", "max:255"],
             "kategori" => ["required", "string"],
             "deskripsi" => ["required", "string"],
             "image" => ["image"],
@@ -138,8 +136,6 @@ class ResepController extends Controller
         $resep->judul = $request->judul;
         $resep->kategori = $request->kategori;
         $resep->deskripsi = $request->deskripsi;
-        $resep->penulis = $request->penulis;
-        $resep->penerbit = $request->penerbit;
         $resep->save();
 
         return response()->json([
