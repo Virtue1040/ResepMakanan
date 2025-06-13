@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Resep;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,11 +14,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        Resep::create([
+            "judul" => "Nasi Goreng",
+            "kategori" => "Makanan",
+            "deskripsi" => "Nasi goreng dengan rempah-rempah pilihan",
+            "imageUrl" => "upload/nasigoreng.jpg"
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        Resep::create([
+            "judul" => "Mie Ayam",
+            "kategori" => "Makanan",
+            "deskripsi" => "Mie ayam dengan saus kacang",
+            "imageUrl" => "upload/mieayam.jpg"
         ]);
     }
 }
