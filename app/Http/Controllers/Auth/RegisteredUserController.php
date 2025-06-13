@@ -31,7 +31,7 @@ class RegisteredUserController extends Controller
         if ($user) {
             if (Hash::check($request->password, $user->password)) {
                 return response()->json([
-                    'success' => true,
+                    'status' => 'success',
                     'message' => 'Berhasil login',
                     'data' => $user->createToken('main')->plainTextToken
                 ]);
@@ -47,7 +47,7 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         return response()->json([
-            'success' => true,
+            'status' => 'success',
             'message' => 'Berhasil registrasi',
             'data' => $user->createToken('main')->plainTextToken
         ]);

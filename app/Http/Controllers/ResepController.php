@@ -2,65 +2,54 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreKatalogRequest;
-use App\Http\Requests\UpdateKatalogRequest;
+use App\Http\Requests\StoreResepRequest;
+use App\Http\Requests\UpdateResepRequest;
+use App\Models\Resep;
 use Illuminate\Http\Request;
-use App\Models\Katalog;
 
-class KatalogController extends Controller
+class ResepController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $user = auth('sanctum')->user();
 
-        $katalog = $user
-            ? Katalog::where('id_user', null)->orWhere('id_user', $user->id_user)->get()
-            : Katalog::where('id_user', null)->get();
+        $reseps = $user
+            ? Resep::whereNull('id_user')->orWhere('id_user', $user->id_user)->get()
+            : Resep::whereNull('id_user')->get();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Data katalog berhasil dimuat',
-            'data' => $katalog->map(function ($item) use ($user) {
+        return response()->json(
+            $reseps->map(function ($resep) use ($user) {
                 return [
-                    'id_katalog' => $item->id_katalog,
-                    'judul' => $item->judul,
-                    'manufacturer' => $item->manufacturer,
-                    'harga' => $item->harga,
-                    'mine' => $user && $item->id_user === $user->id_user ? "1" : "0"
+                    'id_resep' => $resep->id_resep,
+                    'judul' => $resep->judul,
+                    'kategori' => $resep->kategori,
+                    'deskripsi' => $resep->deskripsi,
+                    'mine' => $user && $resep->id_user === $user->id_user ? "1" : "0"
                 ];
             })
-        ]);
+        );
     }
 
-    /**
-     * Display the image file associated with the katalog.
-     */
-    public function getImage($id_katalog)
+    public function getImage($id_resep)
     {
-        $katalog = Katalog::find($id_katalog);
+        $resep = Resep::find($id_resep);
 
-        if ($katalog && file_exists(public_path($katalog->imageUrl))) {
-            return response()->file(public_path($katalog->imageUrl));
+        if ($resep && file_exists(public_path($resep->imageUrl))) {
+            return response()->file(public_path($resep->imageUrl));
         }
 
         return response()->json([
             'status' => 'error',
-            'message' => 'Gambar katalog tidak ditemukan',
+            'message' => 'Gambar tidak ditemukan',
         ], 404);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreKatalogRequest $request)
+    public function store(StoreResepRequest $request)
     {
         $request->validate([
             "judul" => ["required", "string", "max:255"],
-            "manufacturer" => ["required", "string", "max:255"],
-            "harga" => ["required", "numeric"],
+            "kategori" => ["required", "string"],
+            "deskripsi" => ["required", "string"],
             "image" => ["required", "image"],
         ]);
 
@@ -68,45 +57,42 @@ class KatalogController extends Controller
         $filename = 'image_' . time() . '.' . $image->getClientOriginalExtension();
         $image->move(public_path('upload'), $filename);
 
-        Katalog::create([
+        $resep = Resep::create([
             "judul" => $request->judul,
-            "manufacturer" => $request->manufacturer,
-            "harga" => $request->harga,
+            "kategori" => $request->kategori,
+            "deskripsi" => $request->deskripsi,
             "imageUrl" => "upload/$filename",
             "id_user" => $request->user()->id_user
         ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Katalog baru berhasil ditambahkan',
+            'message' => 'Resep berhasil ditambahkan',
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateKatalogRequest $request, $id_katalog)
+    public function update(UpdateResepRequest $request, $id_resep)
     {
         $request->validate([
             "judul" => ["required", "string", "max:255"],
-            "manufacturer" => ["required", "string", "max:255"],
-            "harga" => ["required", "numeric"],
+            "kategori" => ["required", "string"],
+            "deskripsi" => ["required", "string"],
             "image" => ["image"],
         ]);
 
-        $katalog = Katalog::find($id_katalog);
+        $resep = Resep::find($id_resep);
 
-        if (!$katalog) {
+        if (!$resep) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Data katalog tidak ditemukan',
+                'message' => 'Resep tidak ditemukan di sistem',
             ]);
         }
 
-        if ($katalog->id_user !== $request->user()->id_user) {
+        if ($resep->id_user != $request->user()->id_user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Anda tidak diizinkan mengedit katalog ini',
+                'message' => 'Anda tidak memiliki izin untuk mengubah resep ini',
             ]);
         }
 
@@ -114,46 +100,43 @@ class KatalogController extends Controller
             $image = $request->file('image');
             $filename = 'image_' . time() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('upload'), $filename);
-            $katalog->imageUrl = "upload/$filename";
+            $resep->imageUrl = "upload/$filename";
         }
 
-        $katalog->judul = $request->judul;
-        $katalog->manufacturer = $request->manufacturer;
-        $katalog->harga = $request->harga;
-        $katalog->save();
+        $resep->judul = $request->judul;
+        $resep->kategori = $request->kategori;
+        $resep->deskripsi = $request->deskripsi;
+        $resep->save();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Katalog berhasil diperbarui',
+            'message' => 'Resep berhasil diperbarui',
         ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Request $request, $id_katalog)
+    public function destroy(Request $request, $id_resep)
     {
-        $katalog = Katalog::find($id_katalog);
+        $resep = Resep::find($id_resep);
 
-        if (!$katalog) {
+        if (!$resep) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Katalog tidak ditemukan dalam sistem',
+                'message' => 'Data resep tidak dapat ditemukan',
             ]);
         }
 
-        if ($katalog->id_user !== $request->user()->id_user) {
+        if ($resep->id_user != $request->user()->id_user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Anda tidak memiliki akses untuk menghapus katalog ini',
+                'message' => 'Anda bukan pemilik resep ini',
             ]);
         }
 
-        $katalog->delete();
+        $resep->delete();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Katalog berhasil dihapus dari sistem',
+            'message' => 'Resep telah dihapus dengan sukses',
         ]);
     }
 }
